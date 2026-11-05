@@ -1,10 +1,6 @@
-export type Note = {
-  id: string;
-  title: string;
-  body: string;
-};
-
-const sampleNotes: Note[] = [
+// The notes added to a new database the first time the app runs.
+// They're fictional, so you can send them to a model without any privacy concerns.
+export const sampleNotes = [
   {
     id: 'q3-support-review',
     title: 'Q3 support review',
@@ -21,21 +17,3 @@ const sampleNotes: Note[] = [
     body: `From May to July we tested a new annual plan with 2,000 new sign-ups, split evenly between the old pricing page and a new one that shows the annual plan first. On the new page, 31 percent chose an annual plan, compared with 19 percent on the old page. Total sign-ups fell slightly, by about 4 percent, and the difference was not statistically significant. Revenue per sign-up in the first year rose by 22 percent. We also saw more refund requests in the first 30 days, 3.1 percent against 2.2 percent, mostly from small teams who said they had expected a monthly option. Our recommendation is to roll out the new page, keep the monthly plan clearly visible, and add a short comparison table. We will check refund rates again after 90 days before making any further changes.`
   }
 ];
-
-// Next.js can load this file more than once, for example for Server Actions and
-// for Route Handlers. Keeping the list on globalThis gives them all the same list.
-// It lives in memory, so new notes are lost when the server restarts.
-const store = globalThis as typeof globalThis & { aiNotes?: Note[] };
-store.aiNotes ??= sampleNotes;
-
-export const notes = store.aiNotes;
-
-export function findNote(id: string) {
-  return notes.find((note) => note.id === id);
-}
-
-export function addNote(title: string, body: string) {
-  const note = { id: crypto.randomUUID(), title, body };
-  notes.push(note);
-  return note;
-}
