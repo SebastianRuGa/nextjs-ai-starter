@@ -6,8 +6,6 @@ A small Next.js notes app to add AI features to. The basic app is finished: you 
 
 You need Node.js 24 or later, and an Anthropic API key from your instructor. Follow the school's fair-usage rules for your key.
 
-On Windows, run the commands in this README in **Git Bash**, which comes with Git. They don't all work in PowerShell or Command Prompt.
-
 ```bash
 git clone https://github.com/WebDev-WBSCodingSchool/nextjs-ai-starter.git ai-notes
 cd ai-notes
