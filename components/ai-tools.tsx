@@ -1,4 +1,4 @@
-import type { Note } from '@/data/notes';
+import type { Note } from '@/lib/notes';
 
 // Your AI features go here. This file runs on the server, and any part that
 // needs the browser goes in a client component of its own.

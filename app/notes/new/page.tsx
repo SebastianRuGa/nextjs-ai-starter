@@ -1,0 +1,11 @@
+import { createNoteAction } from '@/app/notes/note-actions';
+import { NoteForm } from '@/components/note-form';
+
+export default function NewNotePage() {
+  return (
+    <>
+      <h1 className="mb-6 text-2xl font-semibold">New note</h1>
+      <NoteForm action={createNoteAction} submitLabel="Create note" />
+    </>
+  );
+}
