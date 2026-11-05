@@ -21,6 +21,8 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000).
 
+If your editor can't find `PageProps` before you've started the app, run `npx next typegen` once.
+
 ## Where things are
 
 | Path | Purpose |
@@ -28,7 +30,7 @@ Open [http://localhost:3000](http://localhost:3000).
 | `app/page.tsx` | List of notes |
 | `app/notes/[id]/page.tsx` | One note |
 | `components/ai-tools.tsx` | Where your AI features go |
-| `data/notes.ts` | The sample notes |
+| `data/notes.ts` | The sample notes, kept in memory, with `addNote` for adding your own |
 | `lib/claude.ts` | The Claude client, for use on the server only |
 
 ## Keep model calls on the server

@@ -1,6 +1,9 @@
 import Link from 'next/link';
 import { notes } from '@/data/notes';
 
+// Show notes as they are now, so that notes you add appear in the list.
+export const dynamic = 'force-dynamic';
+
 export default function HomePage() {
   return (
     <ul className="space-y-4">

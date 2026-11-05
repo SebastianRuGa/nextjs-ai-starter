@@ -4,7 +4,7 @@ export type Note = {
   body: string;
 };
 
-export const notes: Note[] = [
+const sampleNotes: Note[] = [
   {
     id: 'q3-support-review',
     title: 'Q3 support review',
@@ -22,6 +22,20 @@ export const notes: Note[] = [
   }
 ];
 
+// Next.js can load this file more than once, for example for Server Actions and
+// for Route Handlers. Keeping the list on globalThis gives them all the same list.
+// It lives in memory, so new notes are lost when the server restarts.
+const store = globalThis as typeof globalThis & { aiNotes?: Note[] };
+store.aiNotes ??= sampleNotes;
+
+export const notes = store.aiNotes;
+
 export function findNote(id: string) {
   return notes.find((note) => note.id === id);
+}
+
+export function addNote(title: string, body: string) {
+  const note = { id: crypto.randomUUID(), title, body };
+  notes.push(note);
+  return note;
 }
