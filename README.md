@@ -233,7 +233,7 @@ while (true) {
 }
 ```
 
-The response has already started by the time a model error can arrive, so the error ends the stream early. `reader.read()` then rejects, so wrap this in `try/catch` and show a message.
+A model error can end the stream early, and `fetch` or `reader.read()` then rejects. Wrap all of this in `try/catch`, including the `fetch`, and show a message.
 
 ### Send an image
 
