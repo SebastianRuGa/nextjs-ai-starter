@@ -6,6 +6,8 @@ A small Next.js notes app to add AI features to. The basic app is finished: you 
 
 You need Node.js 24 or later, and an Anthropic API key from your instructor. Follow the school's fair-usage rules for your key.
 
+On Windows, run the commands in this README in **Git Bash**, which comes with Git. They don't all work in PowerShell or Command Prompt.
+
 ```bash
 git clone https://github.com/WebDev-WBSCodingSchool/nextjs-ai-starter.git ai-notes
 cd ai-notes
@@ -21,7 +23,9 @@ Add your API key to `.env.local`, then start the app:
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000). The first run creates the database, with three sample notes.
+Open [http://localhost:3000](http://localhost:3000). The first run creates the database, with three sample notes. If you delete them, they stay deleted until you reset the database.
+
+`.env.local` holds two settings. `ANTHROPIC_API_KEY` is your key, and `LLM_MODEL` chooses the model, which you can change to compare results. If you've already exported `ANTHROPIC_API_KEY` in your shell, Next.js uses that value and ignores the one in `.env.local`.
 
 If your editor can't find `PageProps` before you've started the app, run `npx next typegen` once.
 
@@ -72,11 +76,21 @@ const note = getNote('office-move');
 
 These functions are synchronous, so there's no `await`. The database is a single file, `data/ai-notes.db`, and Git ignores it.
 
+If you add a page that reads notes, put this at the top of it, as `app/page.tsx` does. Without it, `next build` can prerender the page, and it would never change in production. A page with a `[id]`-style parameter doesn't need it.
+
+```typescript
+export const dynamic = 'force-dynamic';
+```
+
+To change the sample notes, edit `data/sample-notes.ts`, stop the app and run `npm run db:reset`. They're added only to a new database.
+
+The database needs a writable disk. If you deploy, choose a host with one, because read-only serverless hosts can't run it.
+
 ### The database
 
 The app uses SQLite through `node:sqlite`, which is built into Node.js, so there's nothing to install or run. If you'd like to save something new, such as generated summaries, here's how:
 
-1. Add the table to the `db.exec` call in `lib/db.ts`:
+1. Add the table to the `db.exec` call in `lib/db.ts`, then restart `npm run dev`. The call only runs when the connection opens, so a hot reload won't create the table:
 
    ```sql
    CREATE TABLE IF NOT EXISTS summaries (
@@ -94,7 +108,9 @@ The app uses SQLite through `node:sqlite`, which is built into Node.js, so there
      .prepare('INSERT OR REPLACE INTO summaries (note_id, summary) VALUES (?, ?)')
      .run(noteId, summary);
 
-   const row = getDb().prepare('SELECT summary FROM summaries WHERE note_id = ?').get(noteId);
+   const row = getDb().prepare('SELECT summary FROM summaries WHERE note_id = ?').get(noteId) as
+     | { summary: string }
+     | undefined;
    ```
 
 Rows come back as objects with no prototype, which Next.js refuses to pass to client components. Copy the values into a normal object first, as `toNote` does in `lib/notes.ts`.
@@ -163,19 +179,63 @@ console.log(message.parsed_output?.headline);
 
 ### Stream a response
 
-Use `claude.messages.stream()` in a Route Handler. `text` events give you each piece of the answer, and `finalMessage()` waits for the end and rejects if something went wrong.
+Use `claude.messages.stream()` when a response takes long enough for users to notice. `text` events give you each piece of the answer, and `finalMessage()` waits for the end and rejects if something went wrong.
+
+To send the stream to the browser, return it from a Route Handler, for example in `app/api/story/route.ts`:
 
 ```typescript
-const stream = claude.messages.stream({
-  model,
-  max_tokens: 2048,
-  messages: [{ role: 'user', content: 'Write a short story.' }]
-});
+import Anthropic from '@anthropic-ai/sdk';
+import { claude, model } from '@/lib/claude';
 
-stream.on('text', (text) => console.log(text));
+export async function POST() {
+  const stream = claude.messages.stream({
+    model,
+    max_tokens: 2048,
+    messages: [{ role: 'user', content: 'Write a short story.' }]
+  });
 
-const message = await stream.finalMessage();
+  const encoder = new TextEncoder();
+  const body = new ReadableStream({
+    async start(controller) {
+      stream.on('text', (text) => controller.enqueue(encoder.encode(text)));
+
+      try {
+        const message = await stream.finalMessage();
+        if (message.stop_reason !== 'end_turn') throw new Error(`Stopped early: ${message.stop_reason}`);
+        controller.close();
+      } catch (err) {
+        // The client left, so there's nobody to answer
+        if (err instanceof Anthropic.APIUserAbortError) return;
+        console.error(err);
+        controller.error(err);
+      }
+    },
+    cancel() {
+      stream.abort();
+    }
+  });
+
+  return new Response(body, { headers: { 'Content-Type': 'text/plain; charset=utf-8' } });
+}
 ```
+
+In a client component, read it piece by piece:
+
+```typescript
+const response = await fetch('/api/story', { method: 'POST' });
+if (!response.ok) throw new Error('Request failed');
+
+const reader = response.body!.getReader();
+const decoder = new TextDecoder();
+
+while (true) {
+  const { done, value } = await reader.read();
+  if (done) break;
+  setText((current) => current + decoder.decode(value, { stream: true }));
+}
+```
+
+The response has already started by the time a model error can arrive, so the error ends the stream early. `reader.read()` then rejects, so wrap this in `try/catch` and show a message.
 
 ### Send an image
 

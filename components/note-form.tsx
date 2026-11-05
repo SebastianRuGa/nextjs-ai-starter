@@ -17,11 +17,11 @@ export function NoteForm({ action, defaultTitle, defaultBody, submitLabel }: Not
     <form action={formAction} className="space-y-4">
       <label className="block text-sm font-medium">
         Title
-        <input name="title" defaultValue={defaultTitle} required maxLength={120} className="mt-1 w-full rounded border border-slate-300 px-3 py-2 font-normal" />
+        <input name="title" defaultValue={state.title ?? defaultTitle} required maxLength={120} className="mt-1 w-full rounded border border-slate-300 px-3 py-2 font-normal" />
       </label>
       <label className="block text-sm font-medium">
         Text
-        <textarea name="body" defaultValue={defaultBody} required rows={10} maxLength={20000} className="mt-1 w-full rounded border border-slate-300 px-3 py-2 font-normal" />
+        <textarea name="body" defaultValue={state.body ?? defaultBody} required rows={10} maxLength={20000} className="mt-1 w-full rounded border border-slate-300 px-3 py-2 font-normal" />
       </label>
       {state.error && <p className="text-sm text-red-700">{state.error}</p>}
       <button disabled={isPending} className="rounded bg-slate-900 px-3 py-2 text-sm text-white disabled:opacity-50">
